@@ -248,3 +248,58 @@ order by c.email
 and Genre tables to link customers to the genres of music they have purchased. 
 The WHERE clause filters these results to include only 'Rock' music, and ORDER BY sorts the final list by email.*/
 
+/* 7. Let's invite the artists who have written the most rock music in our dataset. 
+Write a query that returns the Artist name and total track count of the top 10 rock bands */
+select * from track;
+select * from album;
+select * from artist;
+
+ select a.artist_id,a.name,count(*) as trackCount
+ from track t
+ join album ab
+ on t.album_id=ab.album_id
+ join artist a 
+ on a.artist_id=ab.artist_id
+ join genre g
+ on t.genre_id=g.genre_id
+ where g.genre_id=1
+ group by ab.artist_id
+ order by trackCount desc
+ limit 10;
+ /*Explanation: This query joins the tables from Track, Album, Artist down to Genre to associate artists with the genre of their tracks. 
+ It then filters for 'Rock' music, groups the results by artist_id to count their rock tracks, 
+ and finally orders them by the count to find the top 10.*/
+ 
+/*8. Return all the track names that have a song length longer than the average song length.
+ - Return the Name and Milliseconds for each track. 
+ Order by the song length, with the longest songs listed first*/
+ select * from track;
+ 
+ select name,milliseconds,(select avg(milliseconds) from track) as avgSongDuration 
+ from track
+ having milliseconds> avgSongDuration
+ order by milliseconds desc;
+ /*Explanation: This query first calculates the AVERAGE song duration from Track table using  subquery and 
+ then uses the HAVING clause to filter for tracks with a duration longer than that average from the results produced by subquery.*/
+ 
+ /*9. Find how much amount is spent by each customer on artists?
+ Write a query to return customer name, artist name and total spent */
+ select * from customer;
+ select * from artist;
+ select * from invoiceline;
+select concat(c.first_name," ",c.last_name) as CustomerName,ar.name as artistName,
+sum(il.unit_price * il.quantity) as totalSpentByCustomerOnEachArtist
+from customer c
+join invoice i 
+on c.customer_id = i.customer_id
+join invoiceline il 
+on i.invoice_id = il.invoice_id
+join track t 
+on il.track_id = t.track_id
+join album al 
+on t.album_id = al.album_id
+join artist ar 
+on al.artist_id = ar.artist_id
+group by c.customer_id,ar.artist_id order by customerName,totalSpentByCustomerOnEachArtist;
+/*Explanation: This query joins Customer, Invoice, invoiceline,  and track data with album and artist information.
+ It then groups the results by customer_id and artist_id to calculate the total amount spent on each artist by every customer.*/

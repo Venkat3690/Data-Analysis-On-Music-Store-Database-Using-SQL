@@ -229,6 +229,11 @@ The LIMIT 1 clause ensures that only the top customer is returned.*/
 /*6. Write a query to return the email, first name, last name, & Genre of all Rock Music listeners. 
 Return your list ordered alphabetically by email starting with 'A'.
 */
+select * from customer;
+select * from invoice;
+select * from invoiceline;
+select * from track;
+select * from genre;
 
 select c.customer_id,c.email,c.first_name,c.last_name,t.genre_id,g.name
 from customer c
@@ -287,6 +292,7 @@ select * from artist;
  select * from customer;
  select * from artist;
  select * from invoiceline;
+ 
 select concat(c.first_name," ",c.last_name) as CustomerName,ar.name as artistName,
 sum(il.unit_price * il.quantity) as totalSpentByCustomerOnEachArtist
 from customer c
@@ -303,3 +309,63 @@ on al.artist_id = ar.artist_id
 group by c.customer_id,ar.artist_id order by customerName,totalSpentByCustomerOnEachArtist;
 /*Explanation: This query joins Customer, Invoice, invoiceline,  and track data with album and artist information.
  It then groups the results by customer_id and artist_id to calculate the total amount spent on each artist by every customer.*/
+ 
+ /*10. We want to find out the most popular music Genre for each country.
+ We determine the most popular genre as the genre with the highest amount of purchases.
+ Write a query that returns each country along with the top Genre. 
+ For countries where the maximum number of purchases is shared, return all Genres
+*/
+select * from customer;
+select * from invoice;
+select * from invoiceline;
+select * from track;
+select * from genre;
+
+with countryGenrePurchases as(
+select c.country,g.name,sum(il.quantity) as totalPurchases
+from customer c
+join invoice i on c.customer_id = i.customer_id
+join invoiceline il on i.invoice_id = il.invoice_id
+join track t on il.track_id = t.track_id
+join genre g on g.genre_id=t.genre_id
+group by g.genre_id,c.country
+),
+rankedGenres as (
+  select country,name,totalPurchases, rank() over (partition by Country order by totalPurchases desc) as ranking
+  from countryGenrePurchases
+)
+select country,name,totalPurchases
+from rankedGenres
+where ranking = 1
+order by country,totalPurchases desc;
+/*Explanation: The above query first calculates the total purchases for each genre in every country using a Common Table Expression (CTE). 
+It then uses the RANK() window function to find the top-selling genre(s) for each country, correctly handling any ties.
+*/
+
+ /*11. Write a query that determines the customer that has spent the most on music for each country. 
+ Write a query that returns the country along with the top customer and how much they spent. 
+ For countries where the top amount spent is shared, provide all customers who spent this amount
+ */
+select * from customer;
+select * from invoice;
+ 
+with CustomerSpending as (
+select c.country,concat(c.first_name," ",c.last_name) AS customer_name,SUM(i.total) AS total_spent
+from customer as c
+join invoice as i
+on c.customer_id = i.customer_id
+group by c.country,customer_name
+),
+rankedCustomers as (
+select country,customer_name,total_spent,
+rank() over (partition by country order by total_spent desc) as ranking
+from customerSpending
+)
+select country, customer_name, total_spent
+from rankedCustomers
+where ranking = 1 order by country,total_spent desc;
+/*Explanation: A similar approach using a window function can be used to solve this problem.
+ We'll use a Common Table Expression (CTE) to calculate the total spending for each customer, 
+ then rank those customers within their respective countries. 
+Finally, we'll select the customers who have the highest rank (rank 1) in their country.
+*/
